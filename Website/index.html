@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oh Matcha! - มัทฉะแท้เกรดพรีเมียมจากอุจิประเทศญี่ปุ่น</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add html2canvas library for screenshot functionality -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #fffbf6;
+            color: #333;
+        }
+        
+        .billboard {
+            background-color: #61752e;
+            height: 250px;
+            width: 100%;
+            max-width: 970px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .menu-item {
+            transition: transform 0.3s ease;
+        }
+        
+        .menu-item:hover {
+            transform: translateY(-5px);
+        }
+        
+        .receipt {
+            font-family: 'Prompt', sans-serif;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .receipt-line {
+            border-bottom: 1px dashed #ccc;
+            margin: 10px 0;
+        }
+        
+        .matcha-btn {
+            background-color: #61752e;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .matcha-btn:hover {
+            background-color: #4d5e25;
+            transform: translateY(-2px);
+        }
+        
+        .modal {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #ffffff;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background-color: rgba(97, 117, 46, 0.9);
+            color: white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            background-color: rgba(77, 94, 37, 1);
+            transform: scale(1.05);
+        }
+        
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .quantity-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f3f4f6;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+        
+        .quantity-btn:hover {
+            background-color: #e5e7eb;
+        }
+        
+        .quantity-input {
+            width: 40px;
+            text-align: center;
+            border: none;
+            border-left: 1px solid #ddd;
+            border-right: 1px solid #ddd;
+            font-size: 14px;
+            padding: 4px 0;
+        }
+        
+        .quantity-input:focus {
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Back Button (visible only on menu page) -->
+    <button id="back-button" class="back-button hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+    </button>
+
+    <!-- Main Container -->
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="w-full">
+            <div class="billboard rounded-b-lg shadow-md flex flex-col justify-center items-center">
+                <!-- Logo in the billboard -->
+                <img src="oh~matchā_BillBord.png">
+
+            </div>
+        </header>
+
+        <!-- Main Content - Home Page -->
+        <main id="home-page" class="flex-grow container mx-auto px-4 py-8">
+            <div class="text-center my-12">
+                <h1 class="text-5xl md:text-6xl font-bold text-[#61752e] mb-4">Oh Matcha!</h1>
+                <p class="text-xl md:text-2xl mb-8">มัทฉะแท้เกรดพรีเมียมจากอุจิประเทศญี่ปุ่น</p>
+                
+                <button id="order-button" class="matcha-btn text-xl py-3 px-8 rounded-full shadow-lg font-medium">
+                    คลิ๊กเพื่อสั่งอาหาร
+                </button>
+            </div>
+        </main>
+
+        <!-- Menu Page (Hidden by default) -->
+        <main id="menu-page" class="flex-grow container mx-auto px-4 py-8 hidden">
+            <h2 class="text-3xl font-bold text-center text-[#61752e] mb-8">เมนูของเรา</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Matcha Latte -->
+                <div class="menu-item bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="h-48 bg-[#61752e] flex items-center justify-center">
+                        <svg class="w-32 h-32" viewBox="0 0 100 100">
+                            <path d="M30,20 L70,20 L65,80 L35,80 Z" fill="#f8f8f8" />
+                            <path d="M35,30 L65,30 L62,70 L38,70 Z" fill="#61752e" />
+                            <path d="M40,25 C40,22 60,22 60,25" stroke="#61752e" stroke-width="2" fill="none" />
+                        </svg>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="text-xl font-bold mb-2">Matcha Latte</h3>
+                        <p class="text-gray-600 mb-4">Matcha แท้จากอุจิ ผสมกับนมผ่านกระบวนการทําให้เกิดความครีมมี่และมีกลิ่น Matcha บางๆ</p>
+                        
+                        <div class="mb-3">
+                            <label class="block text-gray-700 mb-1">เลือกนม:</label>
+                            <select class="milk-select w-full p-2 border rounded">
+                                <option value="นมวัว" data-extra="0">นมวัว</option>
+                                <option value="นมโอ๊ต" data-extra="10">นมโอ๊ต (+10฿)</option>
+                                <option value="นมหมี" data-extra="0">นมหมี</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="block text-gray-700 mb-1">ระดับความหวาน:</label>
+                            <select class="sweet-select w-full p-2 border rounded">
+                                <option value="0%">0%</option>
+                                <option value="25%">25%</option>
+                                <option value="50%" selected>50%</option>
+                                <option value="75%">75%</option>
+                                <option value="100%">100%</option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex justify-between items-center mt-4">
+                            <span class="text-lg font-bold">฿55</span>
+                            <div class="flex items-center">
+                                <div class="quantity-control mr-2">
+                                    <div class="quantity-btn minus-btn" data-type="latte">-</div>
+                                    <input type="text" class="quantity-input" value="1" readonly>
+                                    <div class="quantity-btn plus-btn" data-type="latte">+</div>
+                                </div>
+                                <button class="add-to-cart matcha-btn px-4 py-2 rounded" 
+                                        data-name="Matcha Latte" 
+                                        data-price="55" 
+                                        data-type="latte">
+                                    เพิ่มลงตะกร้า
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Matcha Pure -->
+                <div class="menu-item bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="h-48 bg-[#61752e] flex items-center justify-center">
+                        <svg class="w-32 h-32" viewBox="0 0 100 100">
+                            <path d="M30,20 L70,20 L65,80 L35,80 Z" fill="#f8f8f8" />
+                            <path d="M35,30 L65,30 L62,70 L38,70 Z" fill="#3a5311" />
+                            <path d="M40,25 C40,22 60,22 60,25" stroke="#3a5311" stroke-width="2" fill="none" />
+                        </svg>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="text-xl font-bold mb-2">Matcha Pure</h3>
+                        <p class="text-gray-600 mb-4">Matcha แท้จากอุจิ ผสมกับน้ําเปล่าผ่านกระบวนการดึงรสชาติของมัทฉะและกลิ่นให้ชัดเจน</p>
+                        
+                        <div class="mb-3">
+                            <label class="block text-gray-700 mb-1">เลือกน้ำ:</label>
+                            <select class="water-select w-full p-2 border rounded">
+                                <option value="น้ำคริสตัล">น้ำคริสตัล</option>
+                                <option value="น้ำสิงห์">น้ำสิงห์</option>
+                                <option value="น้ำแร่">น้ำแร่</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="block text-gray-700 mb-1">ระดับความหวาน:</label>
+                            <select class="sweet-select w-full p-2 border rounded">
+                                <option value="0%">0%</option>
+                                <option value="25%">25%</option>
+                                <option value="50%" selected>50%</option>
+                                <option value="75%">75%</option>
+                                <option value="100%">100%</option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex justify-between items-center mt-4">
+                            <span class="text-lg font-bold">฿45</span>
+                            <div class="flex items-center">
+                                <div class="quantity-control mr-2">
+                                    <div class="quantity-btn minus-btn" data-type="pure">-</div>
+                                    <input type="text" class="quantity-input" value="1" readonly>
+                                    <div class="quantity-btn plus-btn" data-type="pure">+</div>
+                                </div>
+                                <button class="add-to-cart matcha-btn px-4 py-2 rounded" 
+                                        data-name="Matcha Pure" 
+                                        data-price="45" 
+                                        data-type="pure">
+                                    เพิ่มลงตะกร้า
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Matcha Banana Smoothie -->
+                <div class="menu-item bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="h-48 bg-[#61752e] flex items-center justify-center">
+                        <svg class="w-32 h-32" viewBox="0 0 100 100">
+                            <path d="M30,20 L70,20 L65,80 L35,80 Z" fill="#f8f8f8" />
+                            <path d="M35,30 L65,30 L62,70 L38,70 Z" fill="#b8a432" />
+                            <path d="M40,25 C40,22 60,22 60,25" stroke="#b8a432" stroke-width="2" fill="none" />
+                            <path d="M45,50 C45,45 55,45 55,50" stroke="#61752e" stroke-width="2" fill="none" />
+                        </svg>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="text-xl font-bold mb-2">Matcha Banana Smoothie</h3>
+                        <p class="text-gray-600 mb-4">กล้วยปั่น + นมเปรี้ยว + มัทฉะ มีกลิ่นหอมของกล้วยและรสชาติเปรี้ยวๆของนมเปรี้ยว แฝงด้วยรสชาติของมัทฉะ</p>
+                        
+                        <div class="mb-3">
+                            <label class="block text-gray-700 mb-1">ระดับความหวาน:</label>
+                            <select class="sweet-select w-full p-2 border rounded">
+                                <option value="0%">0%</option>
+                                <option value="25%">25%</option>
+                                <option value="50%" selected>50%</option>
+                                <option value="75%">75%</option>
+                                <option value="100%">100%</option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex justify-between items-center mt-4">
+                            <span class="text-lg font-bold">฿60</span>
+                            <div class="flex items-center">
+                                <div class="quantity-control mr-2">
+                                    <div class="quantity-btn minus-btn" data-type="smoothie">-</div>
+                                    <input type="text" class="quantity-input" value="1" readonly>
+                                    <div class="quantity-btn plus-btn" data-type="smoothie">+</div>
+                                </div>
+                                <button class="add-to-cart matcha-btn px-4 py-2 rounded" 
+                                        data-name="Matcha Banana Smoothie" 
+                                        data-price="60" 
+                                        data-type="smoothie">
+                                    เพิ่มลงตะกร้า
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cart Section -->
+            <div class="mt-12 bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-2xl font-bold mb-4">ตะกร้าสินค้า</h3>
+                <div id="cart-items" class="mb-4">
+                    <p id="empty-cart-message" class="text-gray-500">ยังไม่มีสินค้าในตะกร้า</p>
+                </div>
+                
+                <div class="flex justify-between items-center border-t pt-4">
+                    <span class="text-xl font-bold">รวมทั้งหมด:</span>
+                    <span id="total-price" class="text-xl font-bold">฿0</span>
+                </div>
+                
+                <button id="checkout-button" class="matcha-btn w-full py-3 rounded-lg mt-4 text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    สั่งซื้อสินค้า
+                </button>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-[#61752e] text-white py-8 mt-12">
+            <div class="container mx-auto px-4">
+                <div class="text-center">
+                    <h3 class="text-xl font-bold mb-4">ติดต่อ</h3>
+                    <p class="mb-2">
+                        IG: <a href="https://www.instagram.com/oh.mat_cha/" class="underline hover:text-yellow-200 transition">Oh.Matcha!</a>
+                    </p>
+                    <p class="mb-2">Email: oh.matchaa.store@gmail.com</p>
+                    <div class="mt-3 flex justify-center">
+                        <a href="https://lin.ee/UhTq09x">
+                            <img src="https://scdn.line-apps.com/n/line_add_friends/btn/th.png" alt="เพิ่มเพื่อน" height="24" border="0" style="height: 24px;">
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="checkout-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden modal">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold mb-4">กรอกข้อมูลการสั่งซื้อ</h3>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-1">ชื่อผู้รับ:</label>
+                <input type="text" id="customer-name" placeholder="ชื่อจริงหรือชื่อเล่น เช่น น้ำเหนือ, ป้านิ้งขนมอบ" class="w-full p-2 border rounded">
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-1">ตึก / ระดับชั้น,ห้อง / ชั้น / จุดสังเกตุ:</label>
+                <input type="text" id="customer-location" placeholder="เช่น ตึกวิทย์ / ม.4/8 / ชั้นที่ 1 / ทางขึ้นบรรไดฝั่งห้องพักครูอังกฤษ" class="w-full p-2 border rounded">
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-gray-700 mb-1">วิธีการชำระเงิน:</label>
+                <div class="flex flex-col space-y-2">
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="payment-method" value="cash" class="mr-2" checked>
+                        ชำระเงินสด
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="payment-method" value="transfer" class="mr-2">
+                        ชำระเงินแบบโอน
+                    </label>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button id="cancel-checkout" class="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100 transition">
+                    ยกเลิก
+                </button>
+                <button id="confirm-checkout" class="matcha-btn px-6 py-2 rounded">
+                    ยืนยันการสั่งซื้อ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div id="receipt-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden modal">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div id="receipt" class="receipt">
+                <!-- Receipt content will be generated dynamically -->
+            </div>
+            
+            <div class="flex justify-center mt-6 space-x-3">
+                <button id="save-receipt" class="matcha-btn px-6 py-2 rounded">
+                    <span id="save-text">บันทึกใบเสร็จ</span>
+                    <span id="saving-indicator" class="hidden">
+                        <span class="spinner"></span>
+                        กำลังบันทึก...
+                    </span>
+                </button>
+                <button id="close-receipt" class="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100 transition">
+                    ปิด
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Store cart items
+        let cartItems = [];
+        let totalPrice = 0;
+        
+        // DOM Elements
+        const homePage = document.getElementById('home-page');
+        const menuPage = document.getElementById('menu-page');
+        const orderButton = document.getElementById('order-button');
+        const backButton = document.getElementById('back-button');
+        const cartItemsContainer = document.getElementById('cart-items');
+        const emptyCartMessage = document.getElementById('empty-cart-message');
+        const totalPriceElement = document.getElementById('total-price');
+        const checkoutButton = document.getElementById('checkout-button');
+        const checkoutModal = document.getElementById('checkout-modal');
+        const cancelCheckout = document.getElementById('cancel-checkout');
+        const confirmCheckout = document.getElementById('confirm-checkout');
+        const customerNameInput = document.getElementById('customer-name');
+        const customerLocationInput = document.getElementById('customer-location');
+        const receiptModal = document.getElementById('receipt-modal');
+        const receiptContainer = document.getElementById('receipt');
+        const saveReceiptButton = document.getElementById('save-receipt');
+        const closeReceiptButton = document.getElementById('close-receipt');
+        const saveText = document.getElementById('save-text');
+        const savingIndicator = document.getElementById('saving-indicator');
+        
+        // Add event listeners
+        orderButton.addEventListener('click', () => {
+            homePage.classList.add('hidden');
+            menuPage.classList.remove('hidden');
+            backButton.classList.remove('hidden');
+        });
+        
+        // Back button functionality
+        backButton.addEventListener('click', () => {
+            menuPage.classList.add('hidden');
+            homePage.classList.remove('hidden');
+            backButton.classList.add('hidden');
+        });
+        
+        // Quantity control functionality
+        document.querySelectorAll('.plus-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const quantityInput = button.parentElement.querySelector('.quantity-input');
+                let quantity = parseInt(quantityInput.value);
+                quantityInput.value = quantity + 1;
+            });
+        });
+        
+        document.querySelectorAll('.minus-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const quantityInput = button.parentElement.querySelector('.quantity-input');
+                let quantity = parseInt(quantityInput.value);
+                if (quantity > 1) {
+                    quantityInput.value = quantity - 1;
+                }
+            });
+        });
+        
+        // Add to cart functionality
+        document.querySelectorAll('.add-to-cart').forEach(button => {
+            button.addEventListener('click', () => {
+                const menuItem = button.closest('.menu-item');
+                const name = button.getAttribute('data-name');
+                const basePrice = parseInt(button.getAttribute('data-price'));
+                const type = button.getAttribute('data-type');
+                const quantityInput = menuItem.querySelector('.quantity-input');
+                const quantity = parseInt(quantityInput.value);
+                
+                let options = {};
+                let extraPrice = 0;
+                
+                if (type === 'latte') {
+                    const milkSelect = menuItem.querySelector('.milk-select');
+                    const selectedOption = milkSelect.options[milkSelect.selectedIndex];
+                    options.milk = selectedOption.value;
+                    extraPrice = parseInt(selectedOption.getAttribute('data-extra') || 0);
+                    options.sweetness = menuItem.querySelector('.sweet-select').value;
+                } else if (type === 'pure') {
+                    options.water = menuItem.querySelector('.water-select').value;
+                    options.sweetness = menuItem.querySelector('.sweet-select').value;
+                } else if (type === 'smoothie') {
+                    options.sweetness = menuItem.querySelector('.sweet-select').value;
+                }
+                
+                const finalPrice = (basePrice + extraPrice) * quantity;
+                
+                addToCart(name, finalPrice, options, type, extraPrice, quantity);
+                
+                // Reset quantity to 1 after adding to cart
+                quantityInput.value = 1;
+            });
+        });
+        
+        // Checkout button
+        checkoutButton.addEventListener('click', () => {
+            checkoutModal.classList.remove('hidden');
+        });
+        
+        // Cancel checkout
+        cancelCheckout.addEventListener('click', () => {
+            checkoutModal.classList.add('hidden');
+        });
+        
+        // Confirm checkout
+        confirmCheckout.addEventListener('click', () => {
+            const customerName = customerNameInput.value.trim();
+            if (!customerName) {
+                alert('กรุณากรอกชื่อผู้รับ');
+                return;
+            }
+            
+            const customerLocation = customerLocationInput.value.trim();
+            if (!customerLocation) {
+                alert('กรุณากรอกข้อมูลตึก / ห้อง / ชั้น / จุดสังเกตุ');
+                return;
+            }
+            
+            const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+            
+            // Generate receipt
+            generateReceipt(customerName, customerLocation, paymentMethod);
+            
+            // Hide checkout modal and show receipt
+            checkoutModal.classList.add('hidden');
+            receiptModal.classList.remove('hidden');
+        });
+        
+        // Close receipt
+        closeReceiptButton.addEventListener('click', () => {
+            receiptModal.classList.add('hidden');
+            // Reset cart
+            cartItems = [];
+            totalPrice = 0;
+            updateCartDisplay();
+        });
+        
+        // Save receipt as image
+        saveReceiptButton.addEventListener('click', () => {
+            // Show loading indicator
+            saveText.classList.add('hidden');
+            savingIndicator.classList.remove('hidden');
+            
+            // Use html2canvas to capture the receipt as an image
+            html2canvas(receiptContainer, {
+                backgroundColor: '#ffffff',
+                scale: 2, // Higher scale for better quality
+                logging: false
+            }).then(canvas => {
+                // Convert canvas to image data URL
+                const imageData = canvas.toDataURL('image/png');
+                
+                // Create a download link
+                const downloadLink = document.createElement('a');
+                downloadLink.href = imageData;
+                
+                // Generate filename with date
+                const now = new Date();
+                const dateStr = now.toISOString().slice(0, 10);
+                downloadLink.download = `OhMatcha_Receipt_${dateStr}.png`;
+                
+                // Trigger download
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                
+                // Hide loading indicator
+                saveText.classList.remove('hidden');
+                savingIndicator.classList.add('hidden');
+            }).catch(error => {
+                console.error('Error generating receipt image:', error);
+                alert('เกิดข้อผิดพลาดในการบันทึกใบเสร็จ กรุณาลองใหม่อีกครั้ง');
+                
+                // Hide loading indicator
+                saveText.classList.remove('hidden');
+                savingIndicator.classList.add('hidden');
+            });
+        });
+        
+        // Add item to cart
+        function addToCart(name, price, options, type, extraPrice = 0, quantity = 1) {
+            let optionText = '';
+            let priceDetails = '';
+            
+            if (type === 'latte') {
+                optionText = `${options.milk}, ความหวาน ${options.sweetness}`;
+                if (extraPrice > 0) {
+                    priceDetails = ` (รวมค่านมโอ๊ต +${extraPrice}฿)`;
+                }
+            } else if (type === 'pure') {
+                optionText = `${options.water}, ความหวาน ${options.sweetness}`;
+            } else if (type === 'smoothie') {
+                optionText = `ความหวาน ${options.sweetness}`;
+            }
+            
+            const item = {
+                name,
+                price,
+                options: optionText,
+                priceDetails,
+                type,
+                quantity,
+                unitPrice: (price / quantity)
+            };
+            
+            cartItems.push(item);
+            totalPrice += price;
+            
+            updateCartDisplay();
+        }
+        
+        // Update cart display
+        function updateCartDisplay() {
+            if (cartItems.length === 0) {
+                emptyCartMessage.classList.remove('hidden');
+                cartItemsContainer.innerHTML = '<p id="empty-cart-message" class="text-gray-500">ยังไม่มีสินค้าในตะกร้า</p>';
+                checkoutButton.disabled = true;
+            } else {
+                emptyCartMessage.classList.add('hidden');
+                
+                let cartHTML = '';
+                cartItems.forEach((item, index) => {
+                    cartHTML += `
+                        <div class="flex justify-between items-center py-2 border-b">
+                            <div>
+                                <p class="font-medium">${item.name} ${item.quantity > 1 ? `(x${item.quantity})` : ''}</p>
+                                <p class="text-sm text-gray-600">${item.options}</p>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="font-medium">฿${item.price}${item.priceDetails}</span>
+                                <button class="ml-2 text-red-500 hover:text-red-700" onclick="removeFromCart(${index})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                cartItemsContainer.innerHTML = cartHTML;
+                checkoutButton.disabled = false;
+            }
+            
+            totalPriceElement.textContent = `฿${totalPrice}`;
+        }
+        
+        // Remove item from cart
+        function removeFromCart(index) {
+            totalPrice -= cartItems[index].price;
+            cartItems.splice(index, 1);
+            updateCartDisplay();
+        }
+        
+        // Generate receipt
+        function generateReceipt(customerName, customerLocation, paymentMethod) {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+            const timeStr = now.toLocaleTimeString('th-TH');
+            const hourMinute = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            
+            let receiptHTML = `
+                <div class="text-center mb-4">
+               <h2 class="text-xl font-bold mt-2">Oh.Matcha!</h2>
+               <p class="text-sm">${dateStr}</p>
+               <p class="text-sm">${timeStr}</p>
+    </div> 
+    
+    <div class="receipt-line"></div>
+                
+                <div class="receipt-line"></div>
+                
+                <div class="mb-2">
+                    <p class="font-medium">ชื่อผู้รับ: ${customerName}</p>
+                    <p class="text-sm mt-1">สถานที่: ${customerLocation}</p>
+                </div>
+                
+                <div class="receipt-line"></div>
+            `;
+            
+            // Add items
+            cartItems.forEach(item => {
+                receiptHTML += `
+                    <div class="flex justify-between py-1">
+                        <div>
+                            <p>${item.name} ${item.quantity > 1 ? `(x${item.quantity})` : ''}</p>
+                            <p class="text-sm text-gray-600">${item.options}</p>
+                        </div>
+                        <p class="font-medium">฿${item.price}</p>
+                    </div>
+                `;
+            });
+            
+            receiptHTML += `
+                <div class="receipt-line"></div>
+                
+                <div class="flex justify-between py-2">
+                    <p class="font-bold">Total</p>
+                    <p class="font-bold">฿${totalPrice}</p>
+                </div>
+                
+                <div class="receipt-line"></div>
+                
+                <div class="py-2">
+                    <p class="font-medium">${paymentMethod === 'cash' ? 'ชำระเงินสด' : 'ชำระเงินแบบโอน'}</p>
+                </div>
+                
+                <div class="receipt-line"></div>
+                
+                <div class="text-center mt-4">
+                    <p>ขอบคุณที่ใช้บริการ</p>
+                    <p class="mt-3 font-bold text-sm">
+                        <strong>โปรดบันทึกรูปแล้วพิมพ์ในไลน์ว่า "แจ้งรายละเอียด"<br>พร้อมบอก ชื่อผู้รับ วันที่สั่ง และเวลา(แค่ชั่วโมงกับนาที)</strong>
+                    </p>
+                </div>
+            `;
+            
+            receiptContainer.innerHTML = receiptHTML;
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'964c9651842ea1c3',t:'MTc1MzQ1NjI2MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
